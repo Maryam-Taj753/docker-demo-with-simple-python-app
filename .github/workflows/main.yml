@@ -9,11 +9,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repo
+      # Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Step 2: Copy project to EC2 via SSH
+      # Step 2: Copy project to EC2
       - name: Copy files to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -23,7 +23,7 @@ jobs:
           source: "."
           target: "~/app"
 
-      # Step 3: Build & Run on EC2
+      # Step 3: Build & Run container on EC2
       - name: SSH into EC2 and deploy
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -36,3 +36,14 @@ jobs:
             docker stop my-python-app || true
             docker rm my-python-app || true
             docker run -d -p 8000:8080 --name my-python-app my-python-app
+
+      # ✅ Step 4: Cleanup unused containers & images
+      - name: Cleanup Docker system
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker container prune -f
+            docker image prune -a -f
